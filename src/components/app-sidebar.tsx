@@ -1,18 +1,18 @@
 "use client"
 
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboard, LogOut, Users } from "lucide-react"
+import { CalendarDays, Disc3, FileText, Image as ImageIcon, LayoutDashboard, LogOut, ShoppingBag, Users } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import Link from "next/link"
 
@@ -48,6 +48,46 @@ export function AppSidebar() {
                   <Link href="/admin/users">
                     <Users />
                     <span>Utilisateurs</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/informations-generales">
+                    <FileText />
+                    <span>Informations générales</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/concerts">
+                    <CalendarDays />
+                    <span>Concerts</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/sorties">
+                    <Disc3 />
+                    <span>Sorties</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/merch">
+                    <ShoppingBag />
+                    <span>Merch</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/admin/galerie">
+                    <ImageIcon />
+                    <span>Galerie</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
