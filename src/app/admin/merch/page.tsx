@@ -1,17 +1,11 @@
 'use client';
 
+import { AdminModal } from '@/components/admin/admin-modal';
+import { DataTable } from '@/components/admin/data-table';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
@@ -243,201 +237,191 @@ export default function MerchPage() {
     }
   };
 
-  return (
-    <div className="container mx-auto py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Merch</h1>
-        <Button onClick={openCreateModal}>Ajouter un article</Button>
-      </div>
-
-      {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
-
-      <Card className="p-6">
-        {isLoading ? (
-          <p>Chargement...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Titre</TableHead>
-                <TableHead>Prix</TableHead>
-                <TableHead>Tailles</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-20 text-center text-slate-500">
-                    Aucun article enregistré.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{formatPrice(item.price)}</TableCell>
-                    <TableCell>{item.sizes.length > 0 ? item.sizes.join(', ') : '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(item)}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => openDeleteModal(item)}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
-
-      {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-semibold">
-              {isEditMode ? 'Modifier l’article' : 'Ajouter un article'}
-            </h2>
-
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Titre</Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                    placeholder="Nom de l’article"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Prix</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.price}
-                    onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Tailles disponibles</Label>
-                <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
-                  {AVAILABLE_SIZES.map((size) => (
-                    <label
-                      key={size}
-                      className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.sizes.includes(size)}
-                        onChange={() => toggleSize(size)}
-                      />
-                      <span>{size}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="images">Images</Label>
-                <Input
-                  id="images"
-                  type="file"
-                  multiple
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      uploadImages(e.target.files);
-                    }
-                  }}
-                />
-                {isUploadingImages && <p className="text-sm text-slate-600">Upload en cours...</p>}
-
-                {form.images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    {form.images.map((imageUrl) => (
-                      <div key={imageUrl} className="space-y-2">
-                        <Image
-                          src={imageUrl}
-                          alt="Image article"
-                          width={160}
-                          height={160}
-                          className="h-28 w-full rounded-md border border-slate-200 object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => removeImage(imageUrl)}
-                        >
-                          Retirer
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeFormModal}
-                  disabled={isSaving || isUploadingImages}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isSaving || isUploadingImages}>
-                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </Button>
-              </div>
-            </form>
-          </div>
+  const columns: ColumnDef<Merch>[] = [
+    {
+      accessorKey: 'title',
+      header: 'Titre',
+    },
+    {
+      accessorKey: 'price',
+      header: 'Prix',
+      cell: ({ row }) => formatPrice(row.original.price),
+    },
+    {
+      accessorKey: 'sizes',
+      header: 'Tailles',
+      cell: ({ row }) => row.original.sizes.length > 0 ? row.original.sizes.join(', ') : '-',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => openEditModal(row.original)}
+          >
+            Modifier
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => openDeleteModal(row.original)}
+          >
+            Supprimer
+          </Button>
         </div>
-      )}
+      ),
+    },
+  ];
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-2 text-lg font-semibold">Confirmer la suppression</h2>
-            <p className="mb-6 text-sm text-slate-600">
-              Voulez-vous vraiment supprimer l’article {itemToDelete?.title ?? ''} ?
-            </p>
-
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
-                Annuler
-              </Button>
-              <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? 'Suppression...' : 'Supprimer'}
-              </Button>
+    return (
+        <div className="container mx-auto py-10">
+            <div className="mb-6 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Merch</h1>
+                <Button onClick={openCreateModal}>Ajouter un article</Button>
             </div>
-          </div>
+
+            {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
+
+            {isLoading ? (
+            <p>Chargement...</p>
+            ) : (
+            <DataTable columns={columns} data={items} emptyMessage="Aucun article enregistré." />
+            )}
+
+            <AdminModal
+                open={isFormModalOpen}
+                title={isEditMode ? 'Modifier l’article' : 'Ajouter un article'}
+                onClose={closeFormModal}
+                maxWidthClass="max-w-2xl"
+            >
+                <form onSubmit={handleSave} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="title">Titre</Label>
+                            <Input
+                                id="title"
+                                value={form.title}
+                                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                                placeholder="Nom de l’article"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="price">Prix</Label>
+                            <Input
+                                id="price"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.price}
+                                onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                                placeholder="0.00"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Tailles disponibles</Label>
+                        <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
+                            {AVAILABLE_SIZES.map((size) => (
+                                <label
+                                    key={size}
+                                    className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={form.sizes.includes(size)}
+                                        onChange={() => toggleSize(size)}
+                                    />
+                                    <span>{size}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label htmlFor="images">Images</Label>
+                        <Input
+                            id="images"
+                            type="file"
+                            multiple
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                uploadImages(e.target.files);
+                                }
+                            }}
+                        />
+                        {isUploadingImages && <p className="text-sm text-slate-600">Upload en cours...</p>}
+
+                        {form.images.length > 0 && (
+                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                                {form.images.map((imageUrl) => (
+                                    <div key={imageUrl} className="space-y-2">
+                                        <Image
+                                            src={imageUrl}
+                                            alt="Image article"
+                                            width={160}
+                                            height={160}
+                                            className="h-28 w-full rounded-md border border-slate-200 object-cover"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full"
+                                            onClick={() => removeImage(imageUrl)}
+                                        >
+                                            Retirer
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeFormModal}
+                            disabled={isSaving || isUploadingImages}
+                        >
+                            Annuler
+                        </Button>
+                        <Button type="submit" disabled={isSaving || isUploadingImages}>
+                            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                        </Button>
+                    </div>
+                </form>
+            </AdminModal>
+
+            <AdminModal
+                open={isDeleteModalOpen}
+                title="Confirmer la suppression"
+                onClose={closeDeleteModal}
+                maxWidthClass="max-w-md"
+            >
+                <p className="mb-6 text-sm text-slate-600">
+                Voulez-vous vraiment supprimer l’article {itemToDelete?.title ?? ''} ?
+                </p>
+
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
+                        Annuler
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                        {isDeleting ? 'Suppression...' : 'Supprimer'}
+                    </Button>
+                </div>
+            </AdminModal>
         </div>
-      )}
-    </div>
-  );
+    );
 }

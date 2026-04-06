@@ -6,7 +6,8 @@ import path from 'node:path';
 
 export const runtime = 'nodejs';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 function getSafeExtension(filename: string) {
   const ext = path.extname(filename).toLowerCase();
@@ -30,8 +31,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Fichier invalide' }, { status: 400 });
   }
 
+  if (!file.size) {
+    return NextResponse.json({ error: 'Le fichier est vide.' }, { status: 400 });
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: 'Format non supporté. Utilisez PNG, JPG/JPEG ou WEBP.' },
+      { status: 400 }
+    );
+  }
+
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'Le fichier dépasse 5MB' }, { status: 400 });
+    return NextResponse.json({ error: 'Le fichier dépasse 15MB.' }, { status: 400 });
   }
 
   const bytes = await file.arrayBuffer();

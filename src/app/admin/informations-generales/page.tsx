@@ -246,6 +246,8 @@ export default function InformationsGeneralesPage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [message, setMessage] = useState<string>('');
+  const [groupPhotoPreview, setGroupPhotoPreview] = useState<string>('');
+  const [logoPreview, setLogoPreview] = useState<string>('');
   const hasInitializedEditor = useRef(false);
 
   const editor = useEditor({
@@ -335,9 +337,13 @@ export default function InformationsGeneralesPage() {
 
   const uploadImage = async (file: File, imageType: 'group' | 'logo') => {
     setMessage('');
+    const objectUrl = URL.createObjectURL(file);
+
     if (imageType === 'group') {
+      setGroupPhotoPreview(objectUrl);
       setIsUploadingPhoto(true);
     } else {
+      setLogoPreview(objectUrl);
       setIsUploadingLogo(true);
     }
 
@@ -351,17 +357,20 @@ export default function InformationsGeneralesPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload impossible');
+        const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(errorPayload?.error || 'Upload impossible');
       }
 
       const payload = await response.json();
       if (imageType === 'group') {
         setForm((prev) => ({ ...prev, groupPhotoUrl: payload.url }));
+        setGroupPhotoPreview('');
       } else {
         setForm((prev) => ({ ...prev, logoUrl: payload.url }));
+        setLogoPreview('');
       }
-    } catch {
-      setMessage('Erreur lors de l’upload de l’image.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Erreur lors de l’upload de l’image.');
     } finally {
       if (imageType === 'group') {
         setIsUploadingPhoto(false);
@@ -423,9 +432,9 @@ export default function InformationsGeneralesPage() {
                 }}
               />
               {isUploadingPhoto && <p className="text-sm text-slate-600">Upload en cours...</p>}
-              {form.groupPhotoUrl && (
+              {(groupPhotoPreview || form.groupPhotoUrl) && (
                 <Image
-                  src={form.groupPhotoUrl}
+                  src={groupPhotoPreview || form.groupPhotoUrl}
                   alt="Photo du groupe"
                   width={220}
                   height={220}
@@ -448,9 +457,9 @@ export default function InformationsGeneralesPage() {
                 }}
               />
               {isUploadingLogo && <p className="text-sm text-slate-600">Upload en cours...</p>}
-              {form.logoUrl && (
+              {(logoPreview || form.logoUrl) && (
                 <Image
-                  src={form.logoUrl}
+                  src={logoPreview || form.logoUrl}
                   alt="Logo du groupe"
                   width={220}
                   height={220}

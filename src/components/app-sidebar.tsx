@@ -1,5 +1,6 @@
 "use client"
 
+import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,
   SidebarContent,
@@ -14,15 +15,51 @@ import {
 } from "@/components/ui/sidebar"
 import { CalendarDays, Disc3, FileText, Image as ImageIcon, LayoutDashboard, LogOut, ShoppingBag, Users } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
+import Image from "next/image"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 
 export function AppSidebar() {
   const { data: session } = useSession()
+  const [logoUrl, setLogoUrl] = useState("")
+
+  useEffect(() => {
+    const loadGroupLogo = async () => {
+      try {
+        const response = await fetch("/api/admin/general-info")
+
+        if (!response.ok) {
+          return
+        }
+
+        const data = (await response.json()) as { logoUrl?: string }
+        setLogoUrl(data.logoUrl ?? "")
+      } catch {
+        setLogoUrl("")
+      }
+    }
+
+    loadGroupLogo()
+  }, [])
+
+  const isSuperAdmin = session?.user?.role === "super-admin" || session?.user?.role === "super-admin"
 
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <h2 className="text-xl font-bold tracking-tight">Admin Dashboard</h2>
+        {logoUrl ? (
+          <div className="w-full">
+            <Image
+              src={logoUrl}
+              alt="Logo du groupe"
+              width={400}
+              height={120}
+              className="w-full h-auto max-h-24 object-contain"
+            />
+          </div>
+        ) : (
+          <h2 className="text-xl font-bold tracking-tight">Admin Dashboard</h2>
+        )}
         {session?.user && (
           <div className="flex flex-col text-sm text-neutral-500">
             <span className="font-medium text-neutral-900">{session.user.name}</span>
@@ -40,14 +77,6 @@ export function AppSidebar() {
                   <Link href="/admin">
                     <LayoutDashboard />
                     <span>Tableau de bord</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/admin/users">
-                    <Users />
-                    <span>Utilisateurs</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -91,6 +120,22 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              {isSuperAdmin && (
+                <>
+                  <div className="px-2 py-1">
+                    <Separator />
+                  </div>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/admin/users">
+                        <Users />
+                        <span>Utilisateurs</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

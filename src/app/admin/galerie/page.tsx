@@ -1,17 +1,11 @@
 'use client';
 
+import { AdminModal } from '@/components/admin/admin-modal';
+import { DataTable } from '@/components/admin/data-table';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
@@ -197,172 +191,162 @@ export default function GaleriePage() {
     }
   };
 
-  return (
-    <div className="container mx-auto py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Galerie</h1>
-        <Button onClick={openCreateModal}>Ajouter une photo</Button>
-      </div>
-
-      {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
-
-      <Card className="p-6">
-        {isLoading ? (
-          <p>Chargement...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Photo</TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-20 text-center text-slate-500">
-                    Aucune photo enregistrée.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.title}
-                        width={72}
-                        height={72}
-                        className="h-14 w-14 rounded-md border border-slate-200 object-cover"
-                      />
-                    </TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>{item.description || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(item)}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => openDeleteModal(item)}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
-
-      {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-semibold">
-              {isEditMode ? 'Modifier la photo' : 'Ajouter une photo'}
-            </h2>
-
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Titre</Label>
-                <Input
-                  id="title"
-                  value={form.title}
-                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Titre de la photo"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <textarea
-                  id="description"
-                  className="min-h-24 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Description de la photo"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="image">Photo</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      uploadImage(file);
-                    }
-                  }}
-                />
-                {isUploadingImage && <p className="text-sm text-slate-600">Upload en cours...</p>}
-
-                {form.imageUrl && (
-                  <Image
-                    src={form.imageUrl}
-                    alt="Aperçu photo"
-                    width={220}
-                    height={220}
-                    className="rounded-md border border-slate-200 object-cover"
-                  />
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeFormModal}
-                  disabled={isSaving || isUploadingImage}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isSaving || isUploadingImage}>
-                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </Button>
-              </div>
-            </form>
-          </div>
+  const columns: ColumnDef<GalleryItem>[] = [
+    {
+      accessorKey: 'imageUrl',
+      header: 'Photo',
+      cell: ({ row }) => (
+        <Image
+          src={row.original.imageUrl}
+          alt={row.original.title}
+          width={72}
+          height={72}
+          className="h-14 w-14 rounded-md border border-slate-200 object-cover"
+        />
+      ),
+    },
+    {
+      accessorKey: 'title',
+      header: 'Titre',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+      cell: ({ row }) => row.original.description || '-',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => openEditModal(row.original)}
+          >
+            Modifier
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => openDeleteModal(row.original)}
+          >
+            Supprimer
+          </Button>
         </div>
-      )}
+      ),
+    },
+  ];
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-2 text-lg font-semibold">Confirmer la suppression</h2>
-            <p className="mb-6 text-sm text-slate-600">
-              Voulez-vous vraiment supprimer la photo {itemToDelete?.title ?? ''} ?
-            </p>
-
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
-                Annuler
-              </Button>
-              <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                {isDeleting ? 'Suppression...' : 'Supprimer'}
-              </Button>
+    return (
+        <div className="container mx-auto py-10">
+            <div className="mb-6 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Galerie</h1>
+                <Button onClick={openCreateModal}>Ajouter une photo</Button>
             </div>
-          </div>
+
+            {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
+
+            {isLoading ? (
+                <p>Chargement...</p>
+            ) : (
+                <DataTable columns={columns} data={items} emptyMessage="Aucune photo enregistrée." />
+            )}
+
+            <AdminModal
+                open={isFormModalOpen}
+                title={isEditMode ? 'Modifier la photo' : 'Ajouter une photo'}
+                onClose={closeFormModal}
+                maxWidthClass="max-w-2xl"
+            >
+                <form onSubmit={handleSave} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Titre</Label>
+                        <Input
+                            id="title"
+                            value={form.title}
+                            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                            placeholder="Titre de la photo"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <textarea
+                            id="description"
+                            className="min-h-24 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                            value={form.description}
+                            onChange={(e) =>
+                                setForm((prev) => ({ ...prev, description: e.target.value }))
+                            }
+                            placeholder="Description de la photo"
+                        />
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label htmlFor="image">Photo</Label>
+                        <Input
+                            id="image"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                uploadImage(file);
+                                }
+                            }}
+                        />
+                        {isUploadingImage && <p className="text-sm text-slate-600">Upload en cours...</p>}
+
+                        {form.imageUrl && (
+                            <Image
+                                src={form.imageUrl}
+                                alt="Aperçu photo"
+                                width={220}
+                                height={220}
+                                className="rounded-md border border-slate-200 object-cover"
+                            />
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeFormModal}
+                            disabled={isSaving || isUploadingImage}
+                        >
+                            Annuler
+                        </Button>
+                        <Button type="submit" disabled={isSaving || isUploadingImage}>
+                            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                        </Button>
+                    </div>
+                </form>
+            </AdminModal>
+
+            <AdminModal
+                open={isDeleteModalOpen}
+                title="Confirmer la suppression"
+                onClose={closeDeleteModal}
+                maxWidthClass="max-w-md"
+            >
+                <p className="mb-6 text-sm text-slate-600">
+                    Voulez-vous vraiment supprimer la photo {itemToDelete?.title ?? ''} ?
+                </p>
+
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
+                        Annuler
+                    </Button>
+                    <Button type="button" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                        {isDeleting ? 'Suppression...' : 'Supprimer'}
+                    </Button>
+                </div>
+            </AdminModal>
         </div>
-      )}
-    </div>
-  );
+    );
 }

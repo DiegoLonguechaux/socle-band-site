@@ -1,17 +1,11 @@
 'use client';
 
+import { AdminModal } from '@/components/admin/admin-modal';
+import { DataTable } from '@/components/admin/data-table';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
@@ -236,270 +230,255 @@ export default function SortiesPage() {
     }
   };
 
+  const columns: ColumnDef<Release>[] = [
+    {
+      accessorKey: 'type',
+      header: 'Type',
+      cell: ({ row }) => releaseTypeLabel[row.original.type],
+    },
+    {
+      accessorKey: 'name',
+      header: 'Nom',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => openEditModal(row.original)}
+          >
+            Modifier
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={() => openDeleteModal(row.original)}
+          >
+            Supprimer
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="container mx-auto py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Sorties</h1>
-        <Button onClick={openCreateModal}>Ajouter une sortie</Button>
-      </div>
-
-      {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
-
-      <Card className="p-6">
-        {isLoading ? (
-          <p>Chargement...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Nom</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {releases.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="h-20 text-center text-slate-500">
-                    Aucune sortie enregistrée.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                releases.map((release) => (
-                  <TableRow key={release.id}>
-                    <TableCell>{releaseTypeLabel[release.type]}</TableCell>
-                    <TableCell>{release.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditModal(release)}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => openDeleteModal(release)}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
-
-      {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-semibold">
-              {isEditMode ? 'Modifier la sortie' : 'Ajouter une sortie'}
-            </h2>
-
-            <form onSubmit={handleSaveRelease} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <select
-                    id="type"
-                    className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm"
-                    value={form.type}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, type: e.target.value as ReleaseType }))
-                    }
-                  >
-                    <option value="single">Single</option>
-                    <option value="ep">EP</option>
-                    <option value="album">Album</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom</Label>
-                  <Input
-                    id="name"
-                    value={form.name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder="Nom de la sortie"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="cover">Pochette</Label>
-                <Input
-                  id="cover"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      uploadCover(file);
-                    }
-                  }}
-                />
-                {isUploadingCover && <p className="text-sm text-slate-600">Upload en cours...</p>}
-                {form.coverUrl && (
-                  <Image
-                    src={form.coverUrl}
-                    alt="Pochette"
-                    width={180}
-                    height={180}
-                    className="rounded-md border border-slate-200 object-cover"
-                  />
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Liens plateformes</h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="spotify">Spotify</Label>
-                    <Input
-                      id="spotify"
-                      value={form.links.spotify}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, spotify: e.target.value },
-                        }))
-                      }
-                      placeholder="https://open.spotify.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="deezer">Deezer</Label>
-                    <Input
-                      id="deezer"
-                      value={form.links.deezer}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, deezer: e.target.value },
-                        }))
-                      }
-                      placeholder="https://deezer.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="appleMusic">Apple Music</Label>
-                    <Input
-                      id="appleMusic"
-                      value={form.links.appleMusic}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, appleMusic: e.target.value },
-                        }))
-                      }
-                      placeholder="https://music.apple.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amazonMusic">Amazon Music</Label>
-                    <Input
-                      id="amazonMusic"
-                      value={form.links.amazonMusic}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, amazonMusic: e.target.value },
-                        }))
-                      }
-                      placeholder="https://music.amazon..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="youtubeMusic">YouTube Music</Label>
-                    <Input
-                      id="youtubeMusic"
-                      value={form.links.youtubeMusic}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, youtubeMusic: e.target.value },
-                        }))
-                      }
-                      placeholder="https://music.youtube.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bandcamp">Bandcamp</Label>
-                    <Input
-                      id="bandcamp"
-                      value={form.links.bandcamp}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, bandcamp: e.target.value },
-                        }))
-                      }
-                      placeholder="https://...bandcamp.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="soundcloud">SoundCloud</Label>
-                    <Input
-                      id="soundcloud"
-                      value={form.links.soundcloud}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          links: { ...prev.links, soundcloud: e.target.value },
-                        }))
-                      }
-                      placeholder="https://soundcloud.com/..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeFormModal}
-                  disabled={isSaving || isUploadingCover}
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isSaving || isUploadingCover}>
-                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </Button>
-              </div>
-            </form>
-          </div>
+        <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Sorties</h1>
+            <Button onClick={openCreateModal}>Ajouter une sortie</Button>
         </div>
-      )}
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border bg-white p-6 shadow-lg">
-            <h2 className="mb-2 text-lg font-semibold">Confirmer la suppression</h2>
-            <p className="mb-6 text-sm text-slate-600">
-              Voulez-vous vraiment supprimer la sortie {releaseToDelete?.name ?? ''} ?
-            </p>
+        {message && <p className="mb-4 text-sm text-slate-600">{message}</p>}
+
+        {isLoading ? (
+            <p>Chargement...</p>
+        ) : (
+            <DataTable columns={columns} data={releases} emptyMessage="Aucune sortie enregistrée." />
+        )}
+
+        <AdminModal
+            open={isFormModalOpen}
+            title={isEditMode ? 'Modifier la sortie' : 'Ajouter une sortie'}
+            onClose={closeFormModal}
+            maxWidthClass="max-w-2xl"
+        >
+            <form onSubmit={handleSaveRelease} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <select
+                        id="type"
+                        className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm"
+                        value={form.type}
+                        onChange={(e) =>
+                        setForm((prev) => ({ ...prev, type: e.target.value as ReleaseType }))
+                        }
+                    >
+                        <option value="single">Single</option>
+                        <option value="ep">EP</option>
+                        <option value="album">Album</option>
+                    </select>
+                    </div>
+
+                    <div className="space-y-2">
+                    <Label htmlFor="name">Nom</Label>
+                    <Input
+                        id="name"
+                        value={form.name}
+                        onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                        placeholder="Nom de la sortie"
+                        required
+                    />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <Label htmlFor="cover">Pochette</Label>
+                    <Input
+                    id="cover"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                        uploadCover(file);
+                        }
+                    }}
+                    />
+                    {isUploadingCover && <p className="text-sm text-slate-600">Upload en cours...</p>}
+                    {form.coverUrl && (
+                    <Image
+                        src={form.coverUrl}
+                        alt="Pochette"
+                        width={180}
+                        height={180}
+                        className="rounded-md border border-slate-200 object-cover"
+                    />
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Liens plateformes</h3>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="spotify">Spotify</Label>
+                            <Input
+                                id="spotify"
+                                value={form.links.spotify}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, spotify: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://open.spotify.com/..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="deezer">Deezer</Label>
+                            <Input
+                                id="deezer"
+                                value={form.links.deezer}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, deezer: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://deezer.com/..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="appleMusic">Apple Music</Label>
+                            <Input
+                                id="appleMusic"
+                                value={form.links.appleMusic}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, appleMusic: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://music.apple.com/..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="amazonMusic">Amazon Music</Label>
+                            <Input
+                                id="amazonMusic"
+                                value={form.links.amazonMusic}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, amazonMusic: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://music.amazon..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="youtubeMusic">YouTube Music</Label>
+                            <Input
+                                id="youtubeMusic"
+                                value={form.links.youtubeMusic}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, youtubeMusic: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://music.youtube.com/..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="bandcamp">Bandcamp</Label>
+                            <Input
+                                id="bandcamp"
+                                value={form.links.bandcamp}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, bandcamp: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://...bandcamp.com"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="soundcloud">SoundCloud</Label>
+                            <Input
+                                id="soundcloud"
+                                value={form.links.soundcloud}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                    ...prev,
+                                    links: { ...prev.links, soundcloud: e.target.value },
+                                    }))
+                                }
+                                placeholder="https://soundcloud.com/..."
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={closeFormModal}
+                        disabled={isSaving || isUploadingCover}
+                    >
+                        Annuler
+                    </Button>
+                    <Button type="submit" disabled={isSaving || isUploadingCover}>
+                        {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                    </Button>
+                </div>
+            </form>
+        </AdminModal>
+
+        <AdminModal
+            open={isDeleteModalOpen}
+            title="Confirmer la suppression"
+            onClose={closeDeleteModal}
+            maxWidthClass="max-w-md"
+        >
+            <p className="mb-6 text-sm text-slate-600">Voulez-vous vraiment supprimer la sortie {releaseToDelete?.name ?? ''} ?</p>
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
-                Annuler
-              </Button>
-              <Button type="button" variant="destructive" onClick={handleDeleteRelease} disabled={isDeleting}>
-                {isDeleting ? 'Suppression...' : 'Supprimer'}
-              </Button>
+                <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
+                    Annuler
+                </Button>
+                <Button type="button" variant="destructive" onClick={handleDeleteRelease} disabled={isDeleting}>
+                    {isDeleting ? 'Suppression...' : 'Supprimer'}
+                </Button>
             </div>
-          </div>
-        </div>
-      )}
+        </AdminModal>
     </div>
   );
 }
